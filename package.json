@@ -8,12 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "git+https://github.com/raj-kmr/real-time-chat.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "typescript": "^5.8.2"
+    "@types/websocket": "^1.0.10",
+    "typescript": "^5.8.2",
+    "websocket": "^1.0.35"
   }
 }
