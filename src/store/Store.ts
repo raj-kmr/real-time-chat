@@ -20,7 +20,7 @@ export abstract class Store {
     getChats(roomId: string, limit: number, offset: number){
 
     }
-    addChats(userId: UserId, name: string, message: string, room: string){
+    addChat(userId: UserId, name: string, message: string, room: string){
 
     }
     upvote(userId: UserId, room: string, chatId: string ){

@@ -1,4 +1,4 @@
-import { Chat, Store, UserId} from "./store/Store";
+import { Chat, Store, UserId} from "./Store";
 let globalChatId = 0;
 
 export interface Room {
@@ -26,18 +26,20 @@ export class InMemoryStore implements Store{
         }
         return room.chats.reverse().slice(0, offset).slice(-1 * limit);
     }
-    addChats(userId: UserId, name: string, message: string, roomId: string){
+    addChat(userId: UserId, name: string, message: string, roomId: string){
         const room = this.store.get(roomId);
         if(!room){
-            return 
+            return null
         }
-        room.chats.push({
+        const chat = {
             id: (globalChatId++).toString(),
             userId,
             name,
             message,
             upvotes: []
-        });
+        }
+        room.chats.push(chat);
+        return chat;
     }
 
     upvote(userId: UserId, roomId: string, chatId: string ){
@@ -50,5 +52,7 @@ export class InMemoryStore implements Store{
         if(chat) {
             chat.upvotes.push(userId);
         }
+
+        return chat;
     }
 }
