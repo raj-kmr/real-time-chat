@@ -20,7 +20,7 @@ server.listen(8080, function() {
 
 const wsServer = new WebSocketServer({
     httpServer: server,
-    autoAcceptConnections: false
+    autoAcceptConnections: true
 });
 
 function originIsAllowed(origin: String) {
@@ -29,6 +29,8 @@ function originIsAllowed(origin: String) {
 }
 
 wsServer.on('request', function(request) {
+    console.log('WebSocket request received with origin:', request.origin); //M
+
     if (!originIsAllowed(request.origin)) {
       // Make sure we only accept requests from an allowed origin
       request.reject();
@@ -36,7 +38,9 @@ wsServer.on('request', function(request) {
       return;
     }
     
-    var connection = request.accept('echo-protocol', request.origin);
+    // var connection = request.accept('echo-protocol', request.origin);
+    var connection = request.accept();
+
     console.log((new Date()) + ' Connection accepted.');
     connection.on('message', function(message) {
         // Todo and rate limitting logic here
