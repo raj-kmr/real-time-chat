@@ -27,9 +27,12 @@ export class InMemoryStore implements Store{
         return room.chats.reverse().slice(0, offset).slice(-1 * limit);
     }
     addChat(userId: UserId, name: string, message: string, roomId: string){
+        if(!this.store.get(roomId)){
+            this.initRoom(roomId);
+        }
         const room = this.store.get(roomId);
         if(!room){
-            return null
+            return;
         }
         const chat = {
             id: (globalChatId++).toString(),

@@ -11,10 +11,12 @@ const server = http.createServer(function(request, response) {
     response.end();
 });
 
+server
+
 const userManager =  new UserManager();
 const store = new InMemoryStore();
 
-server.listen(8080, function() {
+server.listen(8080,  function() {
     console.log((new Date()) + ' Server is listening on port 8080');
 });
 
@@ -30,7 +32,7 @@ function originIsAllowed(origin: String) {
 
 wsServer.on('request', function(request) {
     // console.log('WebSocket request received with origin:', request.origin); //M
-
+    console.log("Inside Connect");
     if (!originIsAllowed(request.origin)) {
       // Make sure we only accept requests from an allowed origin
       request.reject();
@@ -39,29 +41,68 @@ wsServer.on('request', function(request) {
     }
     
     var connection = request.accept('echo-protocol', request.origin);
-    // var connection = request.accept();
-
     console.log((new Date()) + ' Connection accepted.');
+
+    // connection.on('message', function(message) {
+    //     console.log("received", message);
+    //     // Todo and rate limitting logic here
+    //     connection.send(JSON.stringify({
+    //         type: "ADD_CHAT",
+    //         payload: {
+    //             message: "Hello from server!",
+    //             upvotes: 0
+    //         }
+    //     }));
+    //     if (message.type === 'utf8') {
+    //         try {
+    //             console.log("Indie with message " + message.utf8Data)
+    //             messageHandler(connection, JSON.parse(message.utf8Data))
+    //         } catch(e){
+
+    //         }
+
+    //         // console.log('Received Message: ' + message.utf8Data);
+    //         // connection.sendUTF(message.utf8Data);
+    //     }
+    // });
+    
+    
     connection.on('message', function(message) {
-        // Todo and rate limitting logic here
         if (message.type === 'utf8') {
+            const data = message.utf8Data; // ✅ safe access now
+            console.log("Indie with message " + message.utf8Data)
+            messageHandler(connection, JSON.parse(message.utf8Data))
+    
             try {
-                messageHandler(connection, JSON.parse(message.utf8Data))
-            } catch(e){
-
+                const { type, payload } = JSON.parse(data);
+    
+                if (type === "SEND_MESSAGE") {
+                    const { message: msgText } = payload;
+    
+                    connection.send(JSON.stringify({
+                        type: "ADD_CHAT",
+                        payload: {
+                            message: msgText,
+                            upvotes: 0
+                        }
+                    }));
+                }
+            } catch (err) {
+                console.error("JSON parse error", err);
             }
-
-            // console.log('Received Message: ' + message.utf8Data);
-            // connection.sendUTF(message.utf8Data);
+        } else {
+            console.warn("Unsupported message type:", message.type);
         }
     });
-    connection.on('close', function(reasonCode, description) {
-        console.log((new Date()) + ' Peer ' + connection.remoteAddress + ' disconnected.');
-    });
+    
+    
 });
 
 function messageHandler(ws: connection, message: IncomingMessage){
+    // console.log("Incoming Message " + JSON.stringify(message));
+
     if(message.type == SupportedMessage.JoinRoom){
+        console.log("User added");
         const payload = message.payload;
         userManager.addUser(payload.name, payload.userId, payload.roomId, ws);
     }
@@ -92,12 +133,13 @@ function messageHandler(ws: connection, message: IncomingMessage){
         userManager.broadCast(payload.roomId, payload.userId, outgoingPayload);
     }
 
-    if(message.type == SupportedMessage.UpvoteMessage){
+    if(message.type === SupportedMessage.UpvoteMessage){
         const payload = message.payload;
         const chat = store.upvote(payload.userId, payload.roomId, payload.chatId);
         if(!chat) {
             return;
         }
+        console.log("Inside upvote 2");
 
         // Todo add broadcast logic here
         const outgoingPayload: OutgoingMessage = {
@@ -108,6 +150,7 @@ function messageHandler(ws: connection, message: IncomingMessage){
                 upvotes: chat.upvotes.length
             }
         }
+        console.log("Inside upvote 3");
         userManager.broadCast(payload.roomId, payload.userId, outgoingPayload);
     }
 }
