@@ -71,22 +71,22 @@ wsServer.on('request', function(request) {
         if (message.type === 'utf8') {
             const data = message.utf8Data; // ✅ safe access now
             console.log("Indie with message " + message.utf8Data)
-            messageHandler(connection, JSON.parse(message.utf8Data))
-    
+            
             try {
-                const { type, payload } = JSON.parse(data);
+                messageHandler(connection, JSON.parse(message.utf8Data))
+                // const { type, payload } = JSON.parse(data);
     
-                if (type === "SEND_MESSAGE") {
-                    const { message: msgText } = payload;
+                // if (type === "SEND_MESSAGE") {
+                //     const { message: msgText } = payload;
     
-                    connection.send(JSON.stringify({
-                        type: "ADD_CHAT",
-                        payload: {
-                            message: msgText,
-                            upvotes: 0
-                        }
-                    }));
-                }
+                //     connection.send(JSON.stringify({
+                //         type: "ADD_CHAT",
+                //         payload: {
+                //             message: msgText,
+                //             upvotes: 0
+                //         }
+                //     }));
+                // }
             } catch (err) {
                 console.error("JSON parse error", err);
             }
@@ -100,6 +100,9 @@ wsServer.on('request', function(request) {
 
 function messageHandler(ws: connection, message: IncomingMessage){
     // console.log("Incoming Message " + JSON.stringify(message));
+    // console.log("📨 Message received with type:", message.type);
+    // console.log("📦 Full message:", message);
+ 
 
     if(message.type == SupportedMessage.JoinRoom){
         console.log("User added");
@@ -114,7 +117,7 @@ function messageHandler(ws: connection, message: IncomingMessage){
             console.error("User not found in DB");
             return;
         }
-        let chat = store.addChat(payload.userId, user.name, payload.roomId, payload.message);
+        let chat = store.addChat(payload.userId, user.name, payload.message, payload.roomId);
         if(!chat){
             return;
         }
@@ -130,12 +133,14 @@ function messageHandler(ws: connection, message: IncomingMessage){
                 upvotes: 0
             }
         }
+        ws.send(JSON.stringify(outgoingPayload));
         userManager.broadCast(payload.roomId, payload.userId, outgoingPayload);
     }
 
     if(message.type === SupportedMessage.UpvoteMessage){
         const payload = message.payload;
         const chat = store.upvote(payload.userId, payload.roomId, payload.chatId);
+        console.log("Inside upvote");
         if(!chat) {
             return;
         }
